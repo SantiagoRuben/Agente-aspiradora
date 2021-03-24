@@ -1,0 +1,18 @@
+
+ #tablero {
+            display: inline-flex;
+            flex-direction: column;
+            border: 2.5px solid;
+}
+
+.fila{
+	display: flex;
+}
+
+.cuadro{
+	border: 2.5px solid;
+	background-color: white;
+	width:50px;
+    height:50px;
+}
+
