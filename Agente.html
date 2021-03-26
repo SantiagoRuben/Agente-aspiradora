@@ -9,7 +9,32 @@
  	</head>
 
 	<body>
-		<div id="tablero"></div>
+		<div class='container'>
+
+			<div class="tablero" id="tablero"></div>
+
+			<div class="elementos">
+				<div class ="score">
+					<div class="tiempo">
+						<h2>Tiempo: </h2>
+						<div class="cronometro" id="cronometro"><h2>00:00</h2></div>
+					</div>
+					<div class="basura">
+						<h2>Basura actual: </h2>
+						<div class="falta" id="falta"><h2>00</h2></div>
+					</div>
+				</div>
+
+				<div class="botones">
+					<button class="boton" onclick="eliminarAspiradora();"><strong>Crear mapa aleatorio</strong></button>
+					<button class="boton" onclick="agregarAspiradora();"><strong>Iniciar</strong></button>
+					<button class="boton"><strong>Pausar</strong></button>
+					<button class="boton"><strong>Reiniciar</strong></button>
+				</div>
+			</div>
+
+		</div>		
 	</body>
 </html>
+
 
