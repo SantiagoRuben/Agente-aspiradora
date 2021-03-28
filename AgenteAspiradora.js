@@ -3,7 +3,10 @@ var posicionInicial;   // guarda la posicion inicial de la aspiradora por si hay
 var posicionBasura = Array(15); //arreglo para conocer donde esta la basura
 var posicionBasuraAux = Array(15); // guarda las posiciones por si hay un reinicio
 var banBotonCrearMapa=0; // Bandera que indica si se presiono el boton de crear mapa
-var intervalo;	//variable para limpiar el intervalo de ejecucion (pausar o finalizar el recorrido)
+var intervalo, intervaloTiempo;	//variable para limpiar el intervalo de ejecucion (pausar o finalizar el recorrido)
+var numBasura = 15; // numero total de la basura
+var minuto = 0;
+var segundos = 0;
 
 //arreglos para validar el limite del mapa
 var limiteSuperior = [1,2,3,4,5,6,7,8,9,10];
@@ -11,11 +14,20 @@ var limiteInferior = [91,92,93,94,95,96,97,98,99,100];
 var limiteIzquierdo = [1,11,21,31,41,51,61,71,81,91];
 var limiteDerecho = [10,20,30,40,50,60,70,80,90,100];
 
+//textos inciales del tiempo y la basura faltante
+const divFalta = document.createElement('div');
+var text = document.createTextNode(0);
+const divCronometro = document.createElement('div');
+var textConometro = document.createTextNode("00:00");
+
+
 // funcion para crear el tablero y poner la aspiradora (solo se hace al cargar por primera vez la pagina)
 window.onload= function creaTablero(){
 
 	const dimension = 10;	//dimension del tablero 
 	const tablero = document.getElementById("tablero"); // se obtiene el div donde se dibujara el tablero
+	const tiempo = document.getElementById("cronometro");
+	const falta = document.getElementById("falta");
 	var NumeroDiv = 1	//se usara para nombrar el id de cada un de los cuadros para poder manipularlos mas facil despues
 	for(var i=0; i<dimension; i++){	//for para crear las filas
 		var fila = document.createElement("div");	// se crea el div de la fila
@@ -33,10 +45,17 @@ window.onload= function creaTablero(){
 	
 	//agregar la imagen de la aspiradora
 
-	posicionAspiradora = Math.round(Math.random()*100); // Numero aleatorio para la posicion de inicial de la aspiradora
+	posicionAspiradora = Math.round(Math.random()*99+1); // Numero aleatorio para la posicion de inicial de la aspiradora
 	posicionInicial = posicionAspiradora;
 	//alert(posicionAspiradora);
 	agregarAspiradora(posicionAspiradora);
+
+	//agregar los parametros inciales de tiempo y basura faltante, como es la primera vez que se une el div entonces se usa appnedChild
+	divFalta.appendChild(text);
+	falta.appendChild(divFalta);
+
+	divCronometro.appendChild(textConometro);
+	tiempo.appendChild(divCronometro);
 }
 
 
@@ -74,7 +93,9 @@ function agregarBasura(pos){
 
 //funcion para añadir toda la basura en el campo, se hace de forma aleatoria
 function crearMapa(){
-	var numBasura = posicionBasura.length;		// numero de la basura a agregar
+	// cambiar el valor de la basura faltante, como ya se agrego previamente el div solo se sustituye el valor
+	divFalta.innerHTML = numBasura;
+	
 	if(banBotonCrearMapa ==0){ 
 		var aux = numBasura;
 		var posicion;	//posicion a colocar la basura
@@ -113,7 +134,9 @@ function eliminarBasura(pos){
 		var img = document.getElementById("imgBasura"+pos);
 		document.getElementById(pos).removeChild(img);
 		posicionBasura[eliminar] = -1;
+		return true;
 	}
+	return false
 }
 //termina funcion eliminar basura
 
@@ -123,8 +146,8 @@ function inciarRecoleccion(){
 	var botonIniciar = document.getElementById("iniciar");
 	botonCrear.disabled = true;
 	botonIniciar.disabled = true;
-	intervalo = setInterval(recolectarBasura,1000); // ejecuta la funcion cada segundo
-
+	intervalo = setInterval(recolectarBasura,700); // ejecuta la funcion cada medio segundo
+	intervaloTiempo = setInterval(actualizarCronometro,1000) // Aumenta el tiempo en 1
 }
 
 //funcion para que se mueva nuestro agente aspiradora
@@ -149,29 +172,26 @@ function recolectarBasura(){
 		case 0:
 			eliminarAspiradora();
 			posicionAspiradora = posicionAspiradora -1;
-			agregarAspiradora(posicionAspiradora);
-			eliminarBasura(posicionAspiradora);
 			break;
 		case 1:
 			eliminarAspiradora();
 			posicionAspiradora = posicionAspiradora -10;
-			agregarAspiradora(posicionAspiradora);
-			eliminarBasura(posicionAspiradora);
 			break;
 		case 2:
 			eliminarAspiradora();
 			posicionAspiradora = posicionAspiradora +1;
-			agregarAspiradora(posicionAspiradora);
-			eliminarBasura(posicionAspiradora);
 			break;
 		case 3:
 			eliminarAspiradora();
 			posicionAspiradora = posicionAspiradora +10;
-			agregarAspiradora(posicionAspiradora);
-			eliminarBasura(posicionAspiradora);
 			break;
 	}
+	agregarAspiradora(posicionAspiradora); // se agrega la aspiradora en su nueva posicion 
+	if(eliminarBasura(posicionAspiradora)){ // si elimino la basura entonces se debe de descontar del contador que se muetra en la pantalla
+		//como ya se agrego previamente el div solo se sustituye el valor
+		divFalta.innerHTML = --numBasura;
 
+	}
 	if(terminarPartida()){// comprobar si ya recolecto toda la basura, finaliza la partida
 		pausa();
 	}
@@ -196,6 +216,7 @@ function terminarPartida(){
 //funcion para pausar la partida
 function pausa(){
 	clearInterval(intervalo); // se limpia el intervalo para que se deje de ejecutar la funcion 
+	clearInterval(intervaloTiempo);
 	var botonCrear = document.getElementById("crear"); //se vuelve habilitar el boton de crear mapa
 	var botonIniciar = document.getElementById("iniciar");
 	botonCrear.disabled = false;
@@ -209,10 +230,44 @@ function reiniciar(){
 	eliminarAspiradora();	//se elimina la aspiradora de su posicion actual
 	agregarAspiradora(posicionInicial);	// se agrega en su posicion inicial
 	posicionAspiradora=posicionInicial;
-
 	for(var i=0; i<posicionBasura.length; i++){	// si ya se habia recolectado basura se debe de volver a poner
 		if(posicionBasura[i] != posicionBasuraAux[i]){
 			agregarBasura(posicionBasuraAux[i]);
+			posicionBasura[i] = posicionBasuraAux[i];
 		}
 	}
+
+	//se reinician los campos de tiempo y numero de basura
+	numBasura = posicionBasura.length;
+	minuto=0;
+	segundos=0;
+	//como ya se agrego previamente el div solo se sustituye el valor
+	divFalta.innerHTML = numBasura;
+	divCronometro.innerHTML = "00:00";
 }
+
+//funcion para actualizar el cronometro
+function actualizarCronometro(){
+	var minutoAux;
+	var segundosAux;
+	segundos++;
+	if(segundos >59){
+		segundos = 0;
+		minuto++;
+	}
+
+	if(segundos<10){
+		segundosAux = "0" + segundos;
+	}else{
+		segundosAux = segundos;
+	}
+
+	if(minuto < 10){
+		minutoAux = "0" + minuto;
+	}else{
+		minutoAux = minuto
+	}
+
+	divCronometro.innerHTML = minutoAux + ":" + segundosAux;
+}
+// termina la funcion para aumentar un segundo 
