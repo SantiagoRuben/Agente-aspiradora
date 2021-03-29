@@ -117,17 +117,15 @@ function crearMapa(){
 	}else{
 
 		for(var i=0; i<numBasura; i++){	// se elimina la basura que esta actuamente en el tablero para generar un nuevo mapa
-			if(posicionBasura[i] != -1) // quiere decio que ya no hay basura en esa cuadro (es por si crea un nuevo mapa cuando ya se habia empezado el juego)
-				eliminarBasura(posicionBasura[i]);
+			var boleano = eliminarBasura(posicionBasura[i]); // es neceario cachar el retorno de la funcion para asi evitar salirse del for
 		} 
-	
 		banBotonCrearMapa=0; //la bandera se regresa a cero para crear un nuevo mapa
 		crearMapa();
 	}
 }
 //Termina la funcion para añadir la basura
 
-//funcion para comprobrar si hay basura en el cuadro y quitarla
+//funcion para comprobrar si hay basura en el cuadro y quitarla retorna verdadero si elimino una basura
 function eliminarBasura(pos){
 	var eliminar= posicionBasura.indexOf(pos) // se busca si la varuable pos se encuentra dentro del arreglo de las posiciones de la basura
 	if(eliminar!=-1){// si esta entonces se elimina la basura de ese div
@@ -146,13 +144,14 @@ function inciarRecoleccion(){
 	var botonIniciar = document.getElementById("iniciar");
 	botonCrear.disabled = true;
 	botonIniciar.disabled = true;
-	intervalo = setInterval(recolectarBasura,700); // ejecuta la funcion cada medio segundo
+	intervalo = setInterval(recolectarBasura,700); // ejecuta la funcion cada 700ms
 	intervaloTiempo = setInterval(actualizarCronometro,1000) // Aumenta el tiempo en 1
 }
 
 //funcion para que se mueva nuestro agente aspiradora
 function recolectarBasura(){
 	var direccion = Math.round(Math.random()*3); // 0=izquierda, 1=arriba, 2=derecha, 3=abajo; 
+	direccion = basuraCerca(direccion); //si esta cerca una basura entonces es su prioridad almenos que se salga del limite permitido
 	/* validar limites del mapa (se cambia al lado contrario al que se saldria del mapa, 
 		ejemplo si esta en el limite superior y se debe mover hacia arriba el movimiento se cambia hacia abajo)*/
 	if(limiteSuperior.indexOf(posicionAspiradora)!=-1 && direccion == 1){
@@ -194,11 +193,21 @@ function recolectarBasura(){
 	}
 	if(terminarPartida()){// comprobar si ya recolecto toda la basura, finaliza la partida
 		pausa();
+		var botonCrear = document.getElementById("crear"); //se vuelve habilitar el boton de crear mapa
+		botonCrear.disabled = false;
+		//se reinician los campos de tiempo y numero de basura
+		numBasura = posicionBasura.length;
+		minuto=0;
+		segundos=0;
+		//como ya se agrego previamente el div solo se sustituye el valor
+		divFalta.innerHTML = 0;
+		divCronometro.innerHTML = "00:00";
+		banBotonCrearMapa=0; //la bandera se regresa a cero para crear un nuevo mapa
 	}
 }
 //Termina funcion para moverse
 
-// funcion para comprobar si todavia queda basura en el mapa
+// funcion para comprobar si todavia queda basura en el mapa, retorna verdadero si concluyo la recoleccion
 function terminarPartida(){
 	var ban=posicionBasura.length;
 	for(var i=0; i<posicionBasura.length; i++){
@@ -217,15 +226,16 @@ function terminarPartida(){
 function pausa(){
 	clearInterval(intervalo); // se limpia el intervalo para que se deje de ejecutar la funcion 
 	clearInterval(intervaloTiempo);
-	var botonCrear = document.getElementById("crear"); //se vuelve habilitar el boton de crear mapa
+ //se vuelve habilitar el boton de inicio
 	var botonIniciar = document.getElementById("iniciar");
-	botonCrear.disabled = false;
 	botonIniciar.disabled = false;
 }
 //termina funcion pausa
 
 //funcion para reiniciar la partida 
 function reiniciar(){
+	var botonCrear = document.getElementById("crear"); //se vuelve habilitar el boton de crear mapa
+	botonCrear.disabled = false;
 	pausa();	// es necesario limpiar el intervalo para que no se ejecuten las acciones guardadas en la pila
 	eliminarAspiradora();	//se elimina la aspiradora de su posicion actual
 	agregarAspiradora(posicionInicial);	// se agrega en su posicion inicial
@@ -271,3 +281,20 @@ function actualizarCronometro(){
 	divCronometro.innerHTML = minutoAux + ":" + segundosAux;
 }
 // termina la funcion para aumentar un segundo 
+
+//funcion para recoger la basura cunado esta cerca, retorna la direccion hacia donde debe moverse
+function basuraCerca(direccion){
+	if(posicionBasura.indexOf(posicionAspiradora + 1) != -1){
+		return 2;
+	}
+	if(posicionBasura.indexOf(posicionAspiradora + 10) != -1){
+		return 3;
+	}
+	if(posicionBasura.indexOf(posicionAspiradora - 1) != -1){
+		return 0;
+	}
+	if(posicionBasura.indexOf(posicionAspiradora - 10) != -1){
+		return 1;
+	}
+	return direccion;
+}
